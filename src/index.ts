@@ -65,8 +65,8 @@ export default class MediumManager {
                     scrollDownHasMoreTimeout = setTimeout(() => {
                         this.page.removeAllListeners('response');
                         resolve(postIds);
-                    }, 5000);
-                }, 1000);
+                    }, 7000);
+                }, 3000);
             }
 
             this.page.on('response', async (response) => {
