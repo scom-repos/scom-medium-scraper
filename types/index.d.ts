@@ -1,3 +1,4 @@
+import { IScraperEngine } from "@scom/scom-scraper";
 export interface IMediumPost {
     id: string;
     firstPublishedAt: number;
@@ -8,10 +9,8 @@ export interface IMediumPost {
     text: string;
 }
 export default class MediumManager {
-    private scraperManager;
-    private browser;
-    private page;
-    constructor();
+    private scraperEngine;
+    constructor(scraperEngine: IScraperEngine);
     init(): Promise<void>;
     scrap(username: string, maximum?: number): Promise<IMediumPost[]>;
     private getPostIds;

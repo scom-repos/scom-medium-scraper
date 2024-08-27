@@ -1,5 +1,4 @@
-import ScraperManager, { Browser, Page } from "@scom/scom-scraper";
-import * as path from "path";
+import {IScraperEngine} from "@scom/scom-scraper";
 
 const IMAGE_URL = `https://miro.medium.com/v2/`;
 
@@ -15,18 +14,17 @@ export interface IMediumPost {
 
 export default class MediumManager {
 
-    private scraperManager: ScraperManager;
-    private browser: Browser;
-    private page: Page;
+    private scraperEngine: IScraperEngine;
 
-    constructor() {
-        this.scraperManager = new ScraperManager();
+    constructor(scraperEngine: IScraperEngine) {
+        this.scraperEngine = scraperEngine;
     }
 
     async init() {
-        const { browser, page } = await this.scraperManager.getBrowserAndPage();
-        this.browser = browser;
-        this.page = page;
+        // const { browser, page } = await this.scraperManager.getBrowserAndPage();
+        // this.browser = browser;
+        // this.page = page;
+        await this.scraperEngine.init();
     }
 
     async scrap(username: string, maximum: number = 0) {
@@ -59,17 +57,15 @@ export default class MediumManager {
                 hasMoreTimeout = setTimeout(async () => {
                     // Assume no more incoming request
                     console.log('Scrolling down');
-                    await this.page.evaluate(() => {
-                        window.scrollTo(0, document.body.scrollHeight);
-                    });
+                    await this.scraperEngine.scrollToBottom();
                     scrollDownHasMoreTimeout = setTimeout(() => {
-                        this.page.removeAllListeners('response');
+                        this.scraperEngine.removeAllListeners('response');
                         resolve(postIds);
                     }, 7000);
                 }, 3000);
             }
 
-            this.page.on('response', async (response) => {
+            this.scraperEngine.on('response', async (response) => {
                 if (response.request().url().indexOf('/_/graphql') === -1) return;
                 resetHasMoreTimeout();
                 clearTimeout(scrollDownHasMoreTimeout);
@@ -80,16 +76,16 @@ export default class MediumManager {
                         postIds.push(postId);
                 }
             })
-            await this.page.goto(url);
+            await this.scraperEngine.goto(url);
             console.log('Redirecting to medium page...');
         })
     }
 
     private async getPostContentById(username: string, id: string) {
         const url = `https://${username}.medium.com/${id}`;
-        await this.page.goto(url);
+        await this.scraperEngine.goto(url);
         console.log(`Redirecting to page content ${id}...`);
-        const contentObject = await this.page.evaluate(() => {
+        const contentObject = await this.scraperEngine.evaluate(() => {
             return window['__APOLLO_STATE__'];
         });
         const post = this.parseContentObjectToPost(contentObject, id);
@@ -150,10 +146,3 @@ export default class MediumManager {
     }
 
 }
-
-// (async () => {
-//     const mediumManager = new MediumManager();
-//     await mediumManager.init();
-//     const posts = await mediumManager.scrap('openswapdex', 1);
-//     console.log('posts', posts);
-// })();
